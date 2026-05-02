@@ -9,7 +9,6 @@ import model.PanelComponent;
  */
 public class ButtonFactory implements ComponentFactory {
 
-    @Override
     public PanelComponent create(final String name) {
         return createButton(name);
     }
