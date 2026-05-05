@@ -6,7 +6,6 @@ import command.CommandHistory;
 import command.PressButtonCommand;
 import command.ReleaseButtonCommand;
 import composite.PanelGroup;
-import composite.PanelLeaf;
 import container.Cell;
 import container.ControlPanel;
 import model.Button;
@@ -16,7 +15,8 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Контроллер интерактивного меню панели управления.
+ * Контроллер интерактивного меню
+ * панели управления АЭС.
  */
 public class MenuController {
 
@@ -42,10 +42,10 @@ public class MenuController {
     }
 
     private void printWelcome() {
-        System.out.println("|======================================|");
+        System.out.println("+--------------------------------------+");
         System.out.println("|   Панель управления АЭС              |");
         System.out.println("|   Controlpanel_of_NPP                |");
-        System.out.println("|======================================|");
+        System.out.println("+--------------------------------------+");
     }
 
     private void runMainLoop() {
@@ -85,6 +85,9 @@ public class MenuController {
             case 7:
                 showCompositeStructure();
                 break;
+            case 8:
+                showBindings();
+                break;
             case 0:
                 return false;
             default:
@@ -97,41 +100,43 @@ public class MenuController {
 
     private void printMainMenu() {
         System.out.println(
-                "\n|=====================================|"
-
+                "\n+--------------------------------------+"
         );
         System.out.println(
-                "|          Главное меню               |"
+                "|           Главное меню               |"
         );
         System.out.println(
-                "|=====================================|"
+                "+--------------------------------------+"
         );
         System.out.println(
-                "|  1. Отобразить панель               |"
+                "|  1. Отобразить панель                |"
         );
         System.out.println(
-                "|  2. Создать новую панель            |"
+                "|  2. Создать новую панель             |"
         );
         System.out.println(
-                "|  3. Нажать кнопку                   |"
+                "|  3. Нажать кнопку                    |"
         );
         System.out.println(
-                "|  4. Отпустить кнопку                |"
+                "|  4. Отпустить кнопку                 |"
         );
         System.out.println(
-                "|  5. Отменить последнее действие     |"
+                "|  5. Отменить последнее действие      |"
         );
         System.out.println(
-                "|  6. Показать статус панели          |"
+                "|  6. Показать статус панели           |"
         );
         System.out.println(
-                "|  7. Показать структуру (Composite)  |"
+                "|  7. Показать структуру               |"
         );
         System.out.println(
-                "|  0. Выход                           |"
+                "|  8. Показать связи кнопок и ламп     |"
         );
         System.out.println(
-                "|=====================================|"
+                "|  0. Выход                            |"
+        );
+        System.out.println(
+                "+--------------------------------------+"
         );
     }
 
@@ -253,7 +258,7 @@ public class MenuController {
                     ? "[o] нажата  "
                     : "[O] отпущена";
             System.out.println(
-                    "  " + btn.getName() + " - " + state
+                    "  " + btn.getName() + " — " + state
                             + " | ламп: "
                             + btn.getObservers().size()
             );
@@ -282,20 +287,32 @@ public class MenuController {
             for (int x = 0; x < panel.getWidth(); x++) {
                 Cell cell = panel.getCell(x, y);
                 if (!cell.isEmpty()) {
-                    buttonGroup.add(
-                            new PanelLeaf(cell.getComponent(), x, y)
+                    cell.getComponent().addToGroup(
+                            buttonGroup,
+                            lampGroup,
+                            x,
+                            y
                     );
                 }
             }
         }
 
-        for (Lamp lamp : lamps) {
-            lampGroup.add(new PanelLeaf(lamp, 0, 0));
-        }
-
         root.add(buttonGroup);
         root.add(lampGroup);
         System.out.println(root.getDescription());
+    }
+
+    private void showBindings() {
+        System.out.println(
+                "\n--- Связи кнопок и ламп ---"
+        );
+        for (Button button : buttons) {
+            System.out.println(
+                    button.getName() + " -> "
+                            + button.getBindingsDescription()
+            );
+        }
+        System.out.println("---------------------------");
     }
 
     private void printButtonList() {
@@ -307,7 +324,7 @@ public class MenuController {
                     : "[O] отпущена";
             System.out.println(
                     "  " + (i + 1) + ". "
-                            + btn.getName() + " - " + state
+                            + btn.getName() + " — " + state
                             + " | ламп: "
                             + btn.getObservers().size()
             );

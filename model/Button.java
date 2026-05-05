@@ -1,5 +1,7 @@
 package model;
 
+import composite.PanelGroup;
+import composite.PanelLeaf;
 import observer.LampObserver;
 
 import java.util.ArrayList;
@@ -7,7 +9,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Кнопка панели управления
+ * Кнопка панели управления.
+ * При изменении состояния уведомляет связанные лампы
  * (паттерн Observer).
  */
 public class Button implements PanelComponent {
@@ -33,17 +36,11 @@ public class Button implements PanelComponent {
         observers.remove(observer);
     }
 
-    /**
-     * Нажимает кнопку и уведомляет наблюдателей.
-     */
     public void press() {
         this.pressed = true;
         notifyObservers();
     }
 
-    /**
-     * Отпускает кнопку и уведомляет наблюдателей.
-     */
     public void release() {
         this.pressed = false;
         notifyObservers();
@@ -61,6 +58,20 @@ public class Button implements PanelComponent {
         return Collections.unmodifiableList(observers);
     }
 
+    public String getBindingsDescription() {
+        if (observers.isEmpty()) {
+            return "нет связанных ламп";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < observers.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(observers.get(i).getBindingDescription());
+        }
+        return sb.toString();
+    }
+
     private void notifyObservers() {
         for (LampObserver observer : observers) {
             observer.onButtonStateChanged(pressed);
@@ -70,5 +81,14 @@ public class Button implements PanelComponent {
     @Override
     public String render() {
         return pressed ? PRESSED_SYMBOL : RELEASED_SYMBOL;
+    }
+
+    @Override
+    public void addToGroup(
+            final PanelGroup buttonGroup,
+            final PanelGroup lampGroup,
+            final int x,
+            final int y) {
+        buttonGroup.add(new PanelLeaf(this, x, y));
     }
 }

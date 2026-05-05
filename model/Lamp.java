@@ -1,9 +1,11 @@
 package model;
 
+import composite.PanelGroup;
+import composite.PanelLeaf;
 import observer.LampObserver;
 
 /**
- * Лампа цветовой индикации панели управления
+ * Лампа цветовой индикации панели управления.
  * Реализует LampObserver для отслеживания
  * состояния кнопок (паттерн Observer).
  */
@@ -12,14 +14,14 @@ public class Lamp implements PanelComponent, LampObserver {
     private static final String INACTIVE_SYMBOL = "Л";
     private static final String ACTIVE_PREFIX = "Л_";
 
-    private boolean active;
+    private int pressedButtonsCount;
     private final Color indicationColor;
     private final String name;
 
     public Lamp(final String lampName, final Color color) {
         this.name = lampName;
         this.indicationColor = color;
-        this.active = false;
+        this.pressedButtonsCount = 0;
     }
 
     public String getName() {
@@ -31,19 +33,37 @@ public class Lamp implements PanelComponent, LampObserver {
     }
 
     public boolean isActive() {
-        return active;
+        return pressedButtonsCount > 0;
     }
 
     @Override
     public void onButtonStateChanged(final boolean buttonPressed) {
-        this.active = buttonPressed;
+        if (buttonPressed) {
+            pressedButtonsCount++;
+        } else {
+            pressedButtonsCount = Math.max(0, pressedButtonsCount - 1);
+        }
+    }
+
+    @Override
+    public String getBindingDescription() {
+        return name + " [цвет=" + indicationColor.getCode() + "]";
     }
 
     @Override
     public String render() {
-        if (active) {
+        if (isActive()) {
             return ACTIVE_PREFIX + indicationColor.getCode();
         }
         return INACTIVE_SYMBOL;
+    }
+
+    @Override
+    public void addToGroup(
+            final PanelGroup buttonGroup,
+            final PanelGroup lampGroup,
+            final int x,
+            final int y) {
+        lampGroup.add(new PanelLeaf(this, x, y));
     }
 }

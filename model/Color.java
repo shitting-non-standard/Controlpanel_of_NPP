@@ -4,11 +4,11 @@ package model;
  * Перечисление доступных цветов индикации ламп
  */
 public enum Color {
-    RED("R"),
-    GREEN("G"),
-    BLUE("B"),
-    YELLOW("Y"),
-    WHITE("W");
+    RED("кр"),
+    GREEN("зл"),
+    BLUE("сн"),
+    YELLOW("жл"),
+    WHITE("бл");
 
     private final String code;
 

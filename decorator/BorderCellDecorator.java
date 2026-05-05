@@ -3,7 +3,8 @@ package decorator;
 import model.PanelComponent;
 
 /**
- * Декоратор, добавляющий рамку вокруг визуализации компонента ячейки.
+ * Декоратор, добавляющий рамку вокруг
+ * визуализации компонента ячейки.
  * Реализует паттерн Decorator.
  */
 public class BorderCellDecorator extends CellDecorator {
