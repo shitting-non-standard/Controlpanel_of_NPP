@@ -11,7 +11,7 @@
         <version>3.2.5</version>
     </parent>
 
-    <groupId>ru.npp</groupId>
+    <groupId>panel.npp</groupId>
     <artifactId>controlpanel-npp</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
