@@ -129,7 +129,6 @@ public class RandomPanelBuilder implements PanelBuilder {
         Color color = colors[random.nextInt(colors.length)];
         LampFactory lampFactory = new LampFactory(color);
         Lamp lamp = lampFactory.createLamp("Lamp" + lampCounter++);
-        panel.placeComponent(x, y, lamp);
         lamps.add(lamp);
     }
 

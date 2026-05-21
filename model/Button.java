@@ -7,25 +7,38 @@ import observer.LampObserver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Кнопка панели управления.
- * При изменении состояния уведомляет связанные лампы
- * (паттерн Observer).
+ * При изменении состояния уведомляет связанные лампы (паттерн Observer).
+ *
+ * Потокобезопасность обеспечивается через:
+ * - ReentrantLock (мьютекс) для защиты состояния pressed (паттерн Mutex из курса)
+ * - CopyOnWriteArrayList для списка наблюдателей (безопасная итерация при нотификации)
+ * - volatile для видимости состояния между потоками (JMM)
  */
 public class Button implements PanelComponent {
 
     private static final String PRESSED_SYMBOL = "o";
     private static final String RELEASED_SYMBOL = "O";
 
-    private boolean pressed;
+    // Мьютекс (ReentrantLock) — один поток в критической секции
+    private final Lock stateLock = new ReentrantLock();
+
+    // volatile: изменения видны всем потокам без полной блокировки
+    private volatile boolean pressed;
     private final String name;
-    private final List<LampObserver> observers;
+
+    // CopyOnWriteArrayList: безопасная итерация при нотификации из нескольких потоков
+    private final CopyOnWriteArrayList<LampObserver> observers;
 
     public Button(final String buttonName) {
         this.name = buttonName;
         this.pressed = false;
-        this.observers = new ArrayList<>();
+        this.observers = new CopyOnWriteArrayList<>();
     }
 
     public void addObserver(final LampObserver observer) {
@@ -36,18 +49,35 @@ public class Button implements PanelComponent {
         observers.remove(observer);
     }
 
+    /**
+     * Нажатие кнопки. Защищено мьютексом:
+     * только один поток может изменить состояние в момент времени.
+     */
     public void press() {
-        this.pressed = true;
-        notifyObservers();
+        stateLock.lock();
+        try {
+            this.pressed = true;
+        } finally {
+            stateLock.unlock();
+        }
+        notifyObservers(true);
     }
 
+    /**
+     * Отпускание кнопки. Защищено мьютексом.
+     */
     public void release() {
-        this.pressed = false;
-        notifyObservers();
+        stateLock.lock();
+        try {
+            this.pressed = false;
+        } finally {
+            stateLock.unlock();
+        }
+        notifyObservers(false);
     }
 
     public boolean isPressed() {
-        return pressed;
+        return pressed; // volatile — безопасно без lock для чтения
     }
 
     public String getName() {
@@ -63,18 +93,21 @@ public class Button implements PanelComponent {
             return "нет связанных ламп";
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < observers.size(); i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append(observers.get(i).getBindingDescription());
+        int i = 0;
+        for (LampObserver o : observers) {
+            if (i++ > 0) sb.append(", ");
+            sb.append(o.getBindingDescription());
         }
         return sb.toString();
     }
 
-    private void notifyObservers() {
+    /**
+     * Нотификация наблюдателей вне блокировки,
+     * чтобы не держать мьютекс во время потенциально долгих операций.
+     */
+    private void notifyObservers(final boolean buttonPressed) {
         for (LampObserver observer : observers) {
-            observer.onButtonStateChanged(pressed);
+            observer.onButtonStateChanged(buttonPressed);
         }
     }
 

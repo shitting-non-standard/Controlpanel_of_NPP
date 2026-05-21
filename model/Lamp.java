@@ -4,24 +4,30 @@ import composite.PanelGroup;
 import composite.PanelLeaf;
 import observer.LampObserver;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Лампа цветовой индикации панели управления.
- * Реализует LampObserver для отслеживания
- * состояния кнопок (паттерн Observer).
+ * Реализует LampObserver для отслеживания состояния кнопок (паттерн Observer).
+ *
+ * Потокобезопасность обеспечивается через:
+ * - AtomicInteger для счётчика нажатых кнопок (атомарные операции без блокировок)
+ *   (паттерн Atomic из курса: java.util.concurrent.atomic)
  */
 public class Lamp implements PanelComponent, LampObserver {
 
     private static final String INACTIVE_SYMBOL = "Л";
     private static final String ACTIVE_PREFIX = "Л_";
 
-    private int pressedButtonsCount;
+    // AtomicInteger — неблокирующий счётчик, потокобезопасный через CAS-операции
+    private final AtomicInteger pressedButtonsCount;
     private final Color indicationColor;
     private final String name;
 
     public Lamp(final String lampName, final Color color) {
         this.name = lampName;
         this.indicationColor = color;
-        this.pressedButtonsCount = 0;
+        this.pressedButtonsCount = new AtomicInteger(0);
     }
 
     public String getName() {
@@ -33,15 +39,20 @@ public class Lamp implements PanelComponent, LampObserver {
     }
 
     public boolean isActive() {
-        return pressedButtonsCount > 0;
+        return pressedButtonsCount.get() > 0;
     }
 
+    /**
+     * Вызывается из потока кнопки. AtomicInteger обеспечивает
+     * потокобезопасное изменение без явной синхронизации.
+     */
     @Override
     public void onButtonStateChanged(final boolean buttonPressed) {
         if (buttonPressed) {
-            pressedButtonsCount++;
+            pressedButtonsCount.incrementAndGet();
         } else {
-            pressedButtonsCount = Math.max(0, pressedButtonsCount - 1);
+            // updateAndGet гарантирует атомарность проверки и обновления
+            pressedButtonsCount.updateAndGet(v -> Math.max(0, v - 1));
         }
     }
 
